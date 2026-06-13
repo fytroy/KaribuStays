@@ -1,0 +1,254 @@
+// Karibu Stays — Marketplace schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  phone         String?
+  role          String    @default("GUEST")
+  bio           String?
+  isHostVerified Boolean  @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  properties    Property[]
+  bookings      Booking[]
+  reviews       Review[]
+  sentMessages  Message[] @relation("MessageSender")
+  threads       MessageThread[] @relation("ThreadParticipants")
+  payouts       Payout[]
+  @@index([email])
+  @@index([role])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? 
+  access_token      String? 
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? 
+  session_state     String?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}
+
+model Property {
+  id            String         @id @default(cuid())
+  hostId        String
+  title         String
+  slug          String         @unique
+  description   String         
+  type          String         
+  status        String         @default("DRAFT")
+  address       String
+  city          String
+  county        String
+  country       String         @default("Kenya")
+  latitude      Float?
+  longitude     Float?
+  maxGuests     Int            @default(2)
+  bedrooms      Int            @default(1)
+  beds          Int            @default(1)
+  bathrooms     Float          @default(1)
+  pricePerNight Int
+  cleaningFee   Int            @default(0)
+  currency      String         @default("KES")
+  checkInTime   String         @default("14:00")
+  checkOutTime  String         @default("11:00")
+  minNights     Int            @default(1)
+  maxNights     Int            @default(30)
+  houseRules    String?        
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  host          User           @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  images        PropertyImage[]
+  amenities     PropertyAmenity[]
+  bookings      Booking[]
+  reviews       Review[]
+  availability  Availability[]
+  threads       MessageThread[]
+  @@index([hostId])
+  @@index([city, status])
+  @@index([status])
+  @@index([slug])
+}
+
+model PropertyImage {
+  id         String   @id @default(cuid())
+  propertyId String
+  url        String
+  alt        String?
+  order      Int      @default(0)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  @@index([propertyId])
+}
+
+model Amenity {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  icon        String?
+  category    String?
+  properties  PropertyAmenity[]
+}
+
+model PropertyAmenity {
+  propertyId String
+  amenityId  String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  @@id([propertyId, amenityId])
+}
+
+model Availability {
+  id            String   @id @default(cuid())
+  propertyId    String
+  date          DateTime 
+  isBlocked     Boolean  @default(false)
+  priceOverride Int?
+  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  @@unique([propertyId, date])
+  @@index([propertyId, date])
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  reference       String        @unique @default(cuid())
+  propertyId      String
+  guestId         String
+  checkIn         DateTime      
+  checkOut        DateTime      
+  guests          Int           @default(1)
+  nights          Int
+  subtotal        Int
+  cleaningFee     Int           @default(0)
+  serviceFee      Int           @default(0)
+  total           Int
+  currency        String        @default("KES")
+  status          String        @default("PENDING") 
+  guestNote       String?       
+  cancelReason    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  property        Property      @relation(fields: [propertyId], references: [id])
+  guest           User          @relation(fields: [guestId], references: [id])
+  payments        Payment[]
+  review          Review?
+  @@index([guestId])
+  @@index([propertyId])
+  @@index([status])
+}
+
+model Payment {
+  id                 String        @id @default(cuid())
+  bookingId          String
+  method             String        
+  status             String        @default("PENDING") 
+  amount             Int
+  currency           String        @default("KES")
+  mpesaPhone         String?
+  merchantRequestId  String?
+  checkoutRequestId  String?       @unique
+  mpesaReceiptNumber String?       @unique
+  resultCode         Int?
+  resultDesc         String?
+  rawCallback        String?       
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  booking            Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  @@index([bookingId])
+  @@index([status])
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  propertyId  String
+  guestId     String
+  bookingId   String   @unique
+  rating      Int
+  cleanliness Int?
+  accuracy    Int?
+  location    Int?
+  value       Int?
+  comment     String   
+  hostReply   String?  
+  createdAt   DateTime @default(now())
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  guest       User     @relation(fields: [guestId], references: [id])
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  @@index([propertyId])
+}
+
+model MessageThread {
+  id           String    @id @default(cuid())
+  propertyId   String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  property     Property? @relation(fields: [propertyId], references: [id])
+  participants User[]    @relation("ThreadParticipants")
+  messages     Message[]
+}
+
+model Message {
+  id        String        @id @default(cuid())
+  threadId  String
+  senderId  String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime      @default(now())
+  thread    MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender    User          @relation("MessageSender", fields: [senderId], references: [id])
+  @@index([threadId])
+}
+
+model Payout {
+  id          String    @id @default(cuid())
+  hostId      String
+  amount      Int
+  currency    String    @default("KES")
+  method      String    @default("MPESA")
+  phone       String?
+  bankAccount String?
+  status      String    @default("PENDING")
+  note        String?
+  adminNote   String?
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  host        User      @relation(fields: [hostId], references: [id])
+  @@index([hostId])
+  @@index([status])
+}

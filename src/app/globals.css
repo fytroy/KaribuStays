@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --grain: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body {
+    @apply bg-cream-100 text-ink-900 font-sans;
+    background-image: var(--grain);
+    background-size: 240px 240px;
+  }
+  h1, h2, h3, h4 { @apply font-display tracking-tight; }
+  ::selection { @apply bg-forest-800 text-cream-100; }
+}
+
+@layer components {
+  .container-narrow { @apply mx-auto max-w-6xl px-6; }
+  .hairline { @apply border-b border-sand-400/30; }
+  .eyebrow { @apply font-sans text-[0.7rem] uppercase tracking-[0.2em] text-forest-800/70 font-medium; }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-forest-800 px-6 py-3
+           text-sm font-medium text-cream-100 transition-all hover:bg-forest-900
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-accent {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-clay-500 px-6 py-3
+           text-sm font-medium text-cream-100 transition-all hover:bg-clay-600 disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-sand-400/40
+           bg-transparent px-6 py-3 text-sm font-medium text-ink-900 transition-all
+           hover:bg-cream-200 hover:border-sand-500;
+  }
+  .input-base {
+    @apply w-full rounded-md border border-sand-400/40 bg-cream-50 px-4 py-2.5 text-sm
+           text-ink-900 placeholder:text-sand-500
+           focus:outline-none focus:ring-2 focus:ring-forest-800/20 focus:border-forest-800;
+  }
+  .card { @apply rounded-xl bg-cream-50 border border-sand-400/20 transition-all; }
+  .display-xl {
+    @apply font-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight;
+    font-weight: 400;
+  }
+  .display-lg { @apply font-display text-4xl md:text-6xl leading-[1.02] tracking-tight; }
+}
+
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.animate-marquee { animation: marquee 40s linear infinite; }
+.zoom-hover img { transition: transform 0.7s ease-out; }
+.zoom-hover:hover img { transform: scale(1.05); }
